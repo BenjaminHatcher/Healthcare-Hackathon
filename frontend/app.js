@@ -19,7 +19,6 @@ const state = {
   },
 };
 
-// Intake now sits between general and health
 const LAYERS = ["emergency", "general", "intake", "health", "other", "result"];
 let currentLayer = 0;
 
@@ -75,15 +74,15 @@ function renderIntakeQuestions(containerId, questions) {
       const current = state.intakeAnswers.pain_score;
       item.innerHTML = `
         <p class="question-text">${q.question}</p>
-        <p class="question-hint">${q.hint || ""}</p>
-        <div class="slider-wrap">
-          <div class="pain-score-display">
-            <span class="pain-big-num" id="intake-pain-num">${current}</span>
+        <p class="question-hint" style="font-size: 0.9em; color: #666;">${q.hint || ""}</p>
+        <div class="slider-wrap" style="margin-top: 15px;">
+          <div style="font-size: 1.5em; font-weight: bold; margin-bottom: 10px;">
+            <span id="intake-pain-num">${current}</span> / 10
           </div>
           <input type="range" id="intake-slider-${q.id}"
                  min="${q.min}" max="${q.max}" value="${current}"
-                 class="pain-slider" />
-          <div class="slider-labels">
+                 style="width: 100%; margin-bottom: 10px;" />
+          <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #555;">
             <span>${q.min} — No pain</span>
             <span>5 — Moderate</span>
             <span>${q.max} — Worst possible</span>
@@ -101,80 +100,52 @@ function renderIntakeQuestions(containerId, questions) {
       const currentVal = state.intakeAnswers[q.id];
       item.innerHTML = `
         <p class="question-text">${q.question}</p>
-        <div class="intake-options" id="opts-${q.id}">
+        <div id="opts-${q.id}" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
           ${q.options.map(opt => `
-            <label class="intake-option ${currentVal === opt.key ? "selected" : ""}"
-                   data-id="${q.id}" data-key="${opt.key}">
+            <label style="cursor: pointer; display: flex; align-items: flex-start; gap: 10px; font-size: 1.1em;">
               <input type="radio" name="${q.id}" value="${opt.key}"
-                     ${currentVal === opt.key ? "checked" : ""} hidden />
-              <span class="option-key">${opt.key}</span>
-              <span class="option-label">${opt.label}</span>
+                     ${currentVal === opt.key ? "checked" : ""} style="margin-top: 4px;" />
+              <strong>${opt.key}</strong> <span>${opt.label}</span>
             </label>`).join("")}
         </div>`;
       container.appendChild(item);
 
-      document.getElementById(`opts-${q.id}`).querySelectorAll(".intake-option").forEach((lbl) => {
-        lbl.addEventListener("click", () => {
-          state.intakeAnswers[q.id] = lbl.dataset.key;
-          document.getElementById(`opts-${q.id}`)
-            .querySelectorAll(".intake-option").forEach((l) => l.classList.remove("selected"));
-          lbl.classList.add("selected");
-        });
+      // Listen for the native browser change event
+      document.getElementById(`opts-${q.id}`).addEventListener("change", (e) => {
+        state.intakeAnswers[q.id] = e.target.value;
       });
 
     } else if (q.type === "checkbox") {
-      // ── Checkbox (multi-select with exclusive option) ──────────────────
+      // ── Checkbox (multi-select) ───────────────────────────────────────
       const currentVals = state.intakeAnswers[q.id];
       item.innerHTML = `
         <p class="question-text">${q.question}</p>
-        <div class="intake-options" id="opts-${q.id}">
+        <div id="opts-${q.id}" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
           ${q.options.map(opt => `
-            <label class="intake-option ${currentVals.includes(opt.key) ? "selected" : ""}"
-                   data-id="${q.id}" data-key="${opt.key}"
-                   data-exclusive="${opt.exclusive ? "true" : "false"}">
-              <input type="checkbox" name="${q.id}" value="${opt.key}"
-                     ${currentVals.includes(opt.key) ? "checked" : ""} hidden />
-              <span class="option-key">${opt.key}</span>
-              <span class="option-label">${opt.label}</span>
+            <label style="cursor: pointer; display: flex; align-items: flex-start; gap: 10px; font-size: 1.1em;">
+              <input type="checkbox" name="${q.id}" value="${opt.key}" data-exclusive="${opt.exclusive ? "true" : "false"}"
+                     ${currentVals.includes(opt.key) ? "checked" : ""} style="margin-top: 4px;" />
+              <strong>${opt.key}</strong> <span>${opt.label}</span>
             </label>`).join("")}
         </div>`;
       container.appendChild(item);
 
-      document.getElementById(`opts-${q.id}`).querySelectorAll(".intake-option").forEach((lbl) => {
-        lbl.addEventListener("click", () => {
-          const key       = lbl.dataset.key;
-          const exclusive = lbl.dataset.exclusive === "true";
-          let   arr       = state.intakeAnswers[q.id];
+      // Listen for the native browser change event and handle "Not applicable" logic
+      document.getElementById(`opts-${q.id}`).addEventListener("change", (e) => {
+        const inputs = Array.from(document.getElementById(`opts-${q.id}`).querySelectorAll("input[type='checkbox']"));
+        const changedInput = e.target;
 
-          if (exclusive) {
-            state.intakeAnswers[q.id] = arr.includes(key) ? [] : [key];
-          } else {
-            // Remove any exclusive option first
-            arr = arr.filter((k) => {
-              const opt = q.options.find((o) => o.key === k);
-              return !opt?.exclusive;
-            });
-            if (arr.includes(key)) {
-              arr = arr.filter((k) => k !== key);
-            } else {
-              arr.push(key);
-            }
-            state.intakeAnswers[q.id] = arr;
-          }
-
-          // Sync visual state
-          const fresh = state.intakeAnswers[q.id];
-          document.getElementById(`opts-${q.id}`).querySelectorAll(".intake-option").forEach((l) => {
-            const inp = l.querySelector("input");
-            if (fresh.includes(l.dataset.key)) {
-              l.classList.add("selected");
-              inp.checked = true;
-            } else {
-              l.classList.remove("selected");
-              inp.checked = false;
-            }
-          });
-        });
+        if (changedInput.dataset.exclusive === "true" && changedInput.checked) {
+            // If they clicked "Not applicable", uncheck everything else
+            inputs.forEach(inp => { if (inp !== changedInput) inp.checked = false; });
+        } else if (changedInput.checked) {
+            // If they clicked a normal symptom, uncheck "Not applicable"
+            const exclusiveInput = inputs.find(inp => inp.dataset.exclusive === "true");
+            if (exclusiveInput) exclusiveInput.checked = false;
+        }
+        
+        // Save the currently checked boxes to the state
+        state.intakeAnswers[q.id] = inputs.filter(inp => inp.checked).map(inp => inp.value);
       });
     }
   });
@@ -250,19 +221,6 @@ document.getElementById("btn-health").addEventListener("click", () => goToLayer(
 document.getElementById("btn-other").addEventListener("click", async () => {
   const btn = document.getElementById("btn-other");
   btn.disabled = true;
-  btn.textContent = "Getting your location...";
-
-  let latitude = null;
-  let longitude = null;
-  try {
-    const pos = await new Promise((resolve, reject) =>
-      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
-    );
-    latitude  = pos.coords.latitude;
-    longitude = pos.coords.longitude;
-  } catch {
-    // Location denied or unavailable — continue without it
-  }
   btn.textContent = "Analysing...";
 
   try {
@@ -272,9 +230,14 @@ document.getElementById("btn-other").addEventListener("click", async () => {
       body: JSON.stringify({
         emergency_answers:         state.emergencyAnswers,
         general_answers:           state.generalAnswers,
-        
+        health_answers:            {},  // reserved for future use
         // Intake questionnaire
-        
+        intake_pain_score:         state.intakeAnswers.pain_score,
+        intake_pain_location:      state.intakeAnswers.pain_location ?? "C",
+        intake_pain_duration:      state.intakeAnswers.pain_duration ?? "A",
+        intake_injuries:           state.intakeAnswers.injuries,
+        intake_symptoms:           state.intakeAnswers.symptoms,
+        intake_mental_state:       state.intakeAnswers.mental_state  ?? "C",
         // Health background
         age:                       parseInt(document.getElementById("age").value) || 0,
         is_pregnant:               state.health.pregnant          ?? false,
@@ -284,14 +247,6 @@ document.getElementById("btn-other").addEventListener("click", async () => {
         has_medications:           state.health.medications       ?? false,
         medications_detail:        document.getElementById("medications-detail").value,
         other_symptoms:            document.getElementById("other-symptoms").value,
-        latitude:  latitude,
-        longitude: longitude,
-        intake_pain_score:    parseInt(document.getElementById("pain-level").value),
-        intake_pain_location: document.getElementById("pain-location").value,
-        intake_pain_duration: "A",   // placeholder until you build that UI
-        intake_injuries:      [],     // placeholder until you build that UI
-        intake_symptoms:      [],     // placeholder until you build that UI
-        intake_mental_state:  "C",   // placeholder until you build that UI
       }),
     });
 
