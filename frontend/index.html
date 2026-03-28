@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HealthRoute</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>HealthRoute</h1>
+      <p class="tagline">Find the fastest care near you.</p>
+    </header>
+
+    <main>
+      <section id="triage-section">
+        <label for="symptoms">What are your symptoms?</label>
+        <textarea id="symptoms" rows="4" placeholder="e.g. chest pain, difficulty breathing..."></textarea>
+        <button id="submit-btn">Find Care</button>
+      </section>
+
+      <section id="result-section" hidden>
+        <div id="result-card">
+          <p id="result-text"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
