@@ -131,30 +131,29 @@ class QuestionsResponse(BaseModel):
 class TriageRequest(BaseModel):
     emergency_answers: dict[str, bool]
     general_answers: dict[str, bool]
-    health_answers: dict[str, bool] = {}
-    # Intake questionnaire fields 
-    # pain_score: 0–10 slider value
+    pain_level: int
+    pain_location: str
+    # Intake questionnaire
     intake_pain_score: int = 0
-    # pain_location answer key: "A" (central) | "B" (peripheral) | "C" (no pain)
     intake_pain_location: str = "C"
-    # pain_duration answer key: "A" (acute) | "B" (chronic)
     intake_pain_duration: str = "A"
-    # injuries: list of selected option keys e.g. ["A", "D"] or ["F"] for N/A
     intake_injuries: list[str] = []
-    # symptoms: list of selected option keys e.g. ["C"] or ["F"] for N/A
     intake_symptoms: list[str] = []
-    # mental_state answer key: "A" (anxious) | "B" (chronic confusion) | "C" (calm)
     intake_mental_state: str = "C"
     # Health background
     age: int
     is_pregnant: bool
     is_immunocompromised: bool
     has_chronic_conditions: bool
-    chronic_conditions_detail: str   # filled if has_chronic_conditions = true
+    chronic_conditions_detail: str
     has_medications: bool
-    medications_detail: str          # filled if has_medications = true
+    medications_detail: str
+    # Location
+    latitude: float | None = None
+    longitude: float | None = None
     # Free text
     other_symptoms: str
+
 
 
 class TriageResponse(BaseModel):
@@ -231,36 +230,49 @@ def triage(request: TriageRequest):
     injuries_str = ", ".join(injury_map.get(k, k) for k in request.intake_injuries) or "not reported"
     symptoms_str = ", ".join(symptom_map.get(k, k) for k in request.intake_symptoms) or "not reported"
    
+    location_info = (
+    f"Patient location: {request.latitude}, {request.longitude} (lat/lng). "
+    f"This is in British Columbia, Canada."
+    if request.latitude and request.longitude
+    else "Patient location: not provided."
+    )
+
     prompt = f"""You are a medical triage assistant helping patients in British Columbia, Canada decide where to seek care.
-Based on the patient's responses below, recommend one of: go to the ER, visit a walk-in clinic, or manage at home.
-Be concise (2-3 sentences). Do not diagnose. Always err on the side of caution.
+    Based on the patient's responses below, recommend one of: go to the ER, visit a walk-in clinic, or manage at home.
+    Be concise (2-3 sentences). Do not diagnose. Always err on the side of caution.
 
-EMERGENCY SCREENING (all No — patient passed):
-{emergency_summary}
+    EMERGENCY SCREENING (all No — patient passed):
+    {emergency_summary}
 
-GENERAL SYMPTOMS:
-{general_summary}
+    GENERAL SYMPTOMS:
+    {general_summary}
 
-INTAKE QUESTIONNAIRE:
-- Self-reported pain score: {request.intake_pain_score}/10 → classified as {pain_severity}
-- Pain location type: {pain_loc_type}
-- Pain duration type: {pain_dur_type}
-- Injury description: {injuries_str}
-- Illness symptoms: {symptoms_str}
-- Mental/emotional state: {mental_state}
+    INTAKE QUESTIONNAIRE:
+    - Self-reported pain score: {request.intake_pain_score}/10 → classified as {pain_severity}
+    - Pain location type: {pain_loc_type}
+    - Pain duration type: {pain_dur_type}
+    - Injury description: {injuries_str}
+    - Illness symptoms: {symptoms_str}
+    - Mental/emotional state: {mental_state}
 
-HEALTH BACKGROUND:
-- Age: {request.age}
-- Pregnant: {'Yes' if request.is_pregnant else 'No'}
-- Immunocompromised: {'Yes' if request.is_immunocompromised else 'No'}
-- Chronic conditions: {chronic}
-- Current medications: {medications}
+    HEALTH BACKGROUND:
+    - Age: {request.age}
+    - Pregnant: {'Yes' if request.is_pregnant else 'No'}
+    - Immunocompromised: {'Yes' if request.is_immunocompromised else 'No'}
+    - Chronic conditions: {chronic}
+    - Current medications: {medications}
 
-OTHER SYMPTOMS (patient's own words):
-{other}
+    OTHER SYMPTOMS (patient's own words):
+    {other}
 
-End your response with exactly one of these on its own line: SEVERITY: er | SEVERITY: clinic | SEVERITY: home"""
+    PATIENT LOCATION:
+    {location_info}
 
+    If recommending a clinic, suggest what type of specialist would be most appropriate (e.g. physiotherapist, dermatologist, urgent care) and name a specific real clinic near the patient's coordinates if you know of one. If unsure of a specific clinic, describe the type to look for and suggest they search Google Maps.
+
+    If your recommendation is to manage at home, include a short section titled "Home Care Tips:" with 3-5 practical things the patient can do to help themselves recover.
+
+    End your response with exactly one of these on its own line: SEVERITY: er | SEVERITY: clinic | SEVERITY: home"""
     response = model.generate_content(prompt)
     raw = response.text.strip()
 
