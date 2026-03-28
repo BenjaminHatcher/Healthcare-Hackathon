@@ -131,8 +131,8 @@ class QuestionsResponse(BaseModel):
 class TriageRequest(BaseModel):
     emergency_answers: dict[str, bool]
     general_answers: dict[str, bool]
-    pain_level: int
-    pain_location: str
+    pain_level: int = 0
+    pain_location: str = ""
     # Intake questionnaire
     intake_pain_score: int = 0
     intake_pain_location: str = "C"
