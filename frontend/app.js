@@ -67,14 +67,22 @@ document.getElementById("pain-level").addEventListener("input", (e) => {
 
 // ── Layer 1: Emergency ────────────────────────────────────────────────────
 async function initEmergency() {
-  const res  = await fetch(`${API_BASE}/api/questions/emergency`);
+   const res  = await fetch(`${API_BASE}/api/questions/emergency`);
   const data = await res.json();
   renderQuestions("questions-emergency", data.questions, state.emergencyAnswers);
   goToLayer(0);
 
   document.getElementById("btn-emergency").addEventListener("click", () => {
-    goToLayer(1);
-    initGeneral();
+    const hasYes = Object.values(state.emergencyAnswers).some((v) => v === true);
+    if (hasYes) {
+      showResult({
+        severity: "er",
+        recommendation: "Based on your responses, you may be experiencing a medical emergency. Please call 911 or go to the nearest Emergency Room immediately. Do not drive yourself.",
+      });
+    } else {
+      goToLayer(1);
+      initGeneral();
+    }
   });
 }
 
