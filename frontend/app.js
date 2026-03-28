@@ -272,14 +272,9 @@ document.getElementById("btn-other").addEventListener("click", async () => {
       body: JSON.stringify({
         emergency_answers:         state.emergencyAnswers,
         general_answers:           state.generalAnswers,
-        health_answers:            {},  // reserved for future use
+        
         // Intake questionnaire
-        intake_pain_score:         state.intakeAnswers.pain_score,
-        intake_pain_location:      state.intakeAnswers.pain_location ?? "C",
-        intake_pain_duration:      state.intakeAnswers.pain_duration ?? "A",
-        intake_injuries:           state.intakeAnswers.injuries,
-        intake_symptoms:           state.intakeAnswers.symptoms,
-        intake_mental_state:       state.intakeAnswers.mental_state  ?? "C",
+        
         // Health background
         age:                       parseInt(document.getElementById("age").value) || 0,
         is_pregnant:               state.health.pregnant          ?? false,
