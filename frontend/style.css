@@ -18,36 +18,83 @@ body {
 
 header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #0077b6;
+header h1 { font-size: 2rem; font-weight: 700; color: #0077b6; }
+.tagline   { color: #555; margin-top: 0.25rem; }
+
+/* ── Progress bar ── */
+#progress-bar {
+  background: #dde3ea;
+  border-radius: 99px;
+  height: 6px;
+  margin-bottom: 0.4rem;
+  overflow: hidden;
 }
 
-.tagline {
-  color: #555;
-  margin-top: 0.25rem;
+#progress-fill {
+  height: 100%;
+  background: #0077b6;
+  border-radius: 99px;
+  transition: width 0.35s ease;
+  width: 0%;
 }
 
-label {
-  display: block;
+#progress-label {
+  font-size: 0.8rem;
+  color: #777;
+  margin-bottom: 1.2rem;
+  text-align: center;
+}
+
+/* ── Question sections ── */
+.question-section h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.3rem;
+}
+
+.instructions {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.question-item {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.question-text {
+  margin-bottom: 0.65rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.yn-buttons { display: flex; gap: 0.5rem; }
+
+.yn {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1.5px solid #ccc;
+  border: 2px solid #ccc;
   border-radius: 8px;
-  font-size: 1rem;
-  resize: vertical;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-button {
+.yn.yes.selected  { background: #2a9d8f; color: white; border-color: #2a9d8f; }
+.yn.no.selected   { background: #d62828; color: white; border-color: #d62828; }
+.yn:hover:not(.selected) { border-color: #0077b6; }
+
+/* ── Buttons ── */
+.next-btn, button {
   margin-top: 1rem;
   width: 100%;
   padding: 0.85rem;
@@ -61,18 +108,104 @@ button {
   transition: background 0.2s;
 }
 
-button:hover { background: #005f8e; }
+.next-btn:hover, button:hover { background: #005f8e; }
 button:disabled { background: #aaa; cursor: not-allowed; }
 
-#result-section {
-  margin-top: 1.5rem;
+/* ── Textarea ── */
+textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  resize: vertical;
+  font-family: inherit;
 }
 
+/* ── Result ── */
 #result-card {
   background: white;
   border-radius: 10px;
-  padding: 1.25rem;
+  padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+#severity-badge {
+  color: white;
+  font-weight: 700;
+  font-size: 1.15rem;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+#result-text {
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+#restart-btn { background: #555; }
+#restart-btn:hover { background: #333; }
+
+/* ── Pain slider ── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.slider-label {
+  font-size: 0.8rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+input[type="range"] {
+  flex: 1;
+  accent-color: #0077b6;
+}
+
+.slider-value {
+  font-size: 0.9rem;
+  color: #444;
+  margin-top: 0.25rem;
+}
+
+/* ── Pain location text input ── */
+input[type="text"] {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
   font-size: 1rem;
-  line-height: 1.5;
+  font-family: inherit;
+  margin-top: 0.25rem;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #0077b6;
+
+  /* ── Expandable detail boxes ── */
+.expandable {
+  margin-top: 0.75rem;
+}
+
+input[type="number"] {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  margin-top: 0.25rem;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: #0077b6;
+}
 }

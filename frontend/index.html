@@ -14,15 +14,114 @@
     </header>
 
     <main>
-      <section id="triage-section">
-        <label for="symptoms">What are your symptoms?</label>
-        <textarea id="symptoms" rows="4" placeholder="e.g. chest pain, difficulty breathing..."></textarea>
-        <button id="submit-btn">Find Care</button>
+
+      <div id="progress-bar" hidden><div id="progress-fill"></div></div>
+      <p id="progress-label" hidden></p>
+
+      <!-- Layer 1: Emergency -->
+      <section id="section-emergency" class="question-section" hidden>
+        <h2>🚨 Emergency Screening</h2>
+        <p class="instructions">Answer honestly — if any of these apply, we'll direct you to the ER immediately.</p>
+        <div id="questions-emergency"></div>
+        <button class="next-btn" id="btn-emergency">Next</button>
       </section>
 
-      <section id="result-section" hidden>
+      <!-- Layer 2: General -->
+      <section id="section-general" class="question-section" hidden>
+        <h2>🩺 General Symptoms</h2>
+        <p class="instructions">Tell us more about what you're experiencing.</p>
+        <div id="questions-general"></div>
+
+        <!-- Pain level slider -->
+        <div class="question-item">
+          <p class="question-text">How would you rate your pain right now?</p>
+          <div class="slider-row">
+            <span class="slider-label">0 — None</span>
+            <input type="range" id="pain-level" min="0" max="10" value="0" step="1" />
+            <span class="slider-label">10 — Severe</span>
+          </div>
+          <p class="slider-value">Current: <strong id="pain-display">0</strong> / 10</p>
+        </div>
+
+        <!-- Pain location -->
+        <div class="question-item">
+          <p class="question-text">Where is your pain or discomfort located?</p>
+          <input type="text" id="pain-location" placeholder="e.g. lower back, chest, right knee..." />
+        </div>
+
+        <button class="next-btn" id="btn-general">Next</button>
+      </section>
+
+      <!-- Layer 3: Health Background (custom inputs) -->
+      <section id="section-health" class="question-section" hidden>
+        <h2>📋 Your Health Background</h2>
+        <p class="instructions">This helps us give a more accurate recommendation.</p>
+
+        <!-- Age -->
+        <div class="question-item">
+          <p class="question-text">How old are you?</p>
+          <input type="number" id="age" min="0" max="120" placeholder="Enter your age" />
+        </div>
+
+        <!-- Pregnant -->
+        <div class="question-item">
+          <p class="question-text">Are you currently pregnant?</p>
+          <div class="yn-buttons">
+            <button class="yn yes" data-field="pregnant" data-val="true">Yes</button>
+            <button class="yn no"  data-field="pregnant" data-val="false">No</button>
+          </div>
+        </div>
+
+        <!-- Immunocompromised -->
+        <div class="question-item">
+          <p class="question-text">Are you immunocompromised or on immunosuppressant medication?</p>
+          <div class="yn-buttons">
+            <button class="yn yes" data-field="immunocompromised" data-val="true">Yes</button>
+            <button class="yn no"  data-field="immunocompromised" data-val="false">No</button>
+          </div>
+        </div>
+
+        <!-- Chronic conditions -->
+        <div class="question-item">
+          <p class="question-text">Do you have any chronic conditions?</p>
+          <div class="yn-buttons">
+            <button class="yn yes" data-field="chronic" data-val="true">Yes</button>
+            <button class="yn no"  data-field="chronic" data-val="false">No</button>
+          </div>
+          <div id="chronic-detail-wrap" class="expandable" hidden>
+            <input type="text" id="chronic-detail" placeholder="e.g. diabetes, asthma, heart disease..." />
+          </div>
+        </div>
+
+        <!-- Medications -->
+        <div class="question-item">
+          <p class="question-text">Are you currently taking any prescription medications?</p>
+          <div class="yn-buttons">
+            <button class="yn yes" data-field="medications" data-val="true">Yes</button>
+            <button class="yn no"  data-field="medications" data-val="false">No</button>
+          </div>
+          <div id="medications-detail-wrap" class="expandable" hidden>
+            <input type="text" id="medications-detail" placeholder="e.g. metformin, lisinopril, sertraline..." />
+          </div>
+        </div>
+
+        <button class="next-btn" id="btn-health">Next</button>
+      </section>
+
+      <!-- Layer 4: Other symptoms -->
+      <section id="section-other" class="question-section" hidden>
+        <h2>💬 Anything Else?</h2>
+        <p class="instructions">Describe any other symptoms or concerns in your own words. Leave blank if none.</p>
+        <textarea id="other-symptoms" rows="4" placeholder="e.g. I've had a mild headache for two days and feel more tired than usual..."></textarea>
+        <button class="next-btn" id="btn-other">Get Recommendation</button>
+      </section>
+
+      <!-- Result -->
+      <section id="section-result" class="question-section" hidden>
         <div id="result-card">
+          <div id="severity-badge"></div>
           <p id="result-text"></p>
+          <button id="restart-btn">Start Over</button>
         </div>
       </section>
     </main>
