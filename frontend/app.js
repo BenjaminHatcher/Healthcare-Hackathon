@@ -250,6 +250,19 @@ document.getElementById("btn-health").addEventListener("click", () => goToLayer(
 document.getElementById("btn-other").addEventListener("click", async () => {
   const btn = document.getElementById("btn-other");
   btn.disabled = true;
+  btn.textContent = "Getting your location...";
+
+  let latitude = null;
+  let longitude = null;
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+    );
+    latitude  = pos.coords.latitude;
+    longitude = pos.coords.longitude;
+  } catch {
+    // Location denied or unavailable — continue without it
+  }
   btn.textContent = "Analysing...";
 
   try {
@@ -276,6 +289,14 @@ document.getElementById("btn-other").addEventListener("click", async () => {
         has_medications:           state.health.medications       ?? false,
         medications_detail:        document.getElementById("medications-detail").value,
         other_symptoms:            document.getElementById("other-symptoms").value,
+        latitude:  latitude,
+        longitude: longitude,
+        intake_pain_score:    parseInt(document.getElementById("pain-level").value),
+        intake_pain_location: document.getElementById("pain-location").value,
+        intake_pain_duration: "A",   // placeholder until you build that UI
+        intake_injuries:      [],     // placeholder until you build that UI
+        intake_symptoms:      [],     // placeholder until you build that UI
+        intake_mental_state:  "C",   // placeholder until you build that UI
       }),
     });
 
