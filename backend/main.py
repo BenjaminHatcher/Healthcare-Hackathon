@@ -20,21 +20,108 @@ app.add_middleware(
 )
 
 EMERGENCY_QUESTIONS = [
-    {"id": "e1", "question": "Are you experiencing chest pain or pressure?"},
-    {"id": "e2", "question": "Are you having difficulty breathing or shortness of breath?"},
+    {"id": "e1", "question": "Is the patient unconscious, responding only to pain, or actively seizing?"},
+    {"id": "e2", "question": "Is the patient experiencing severe difficulty breathing (e.g., unable to speak, turning blue, or showing signs of an upper airway obstruction)?"},
     {"id": "e3", "question": "Are you experiencing sudden numbness or weakness on one side of your body?"},
-    {"id": "e4", "question": "Have you lost consciousness or are you feeling like you might faint?"},
-    {"id": "e5", "question": "Are you experiencing severe, uncontrolled bleeding?"},
+    {"id": "e4", "question": "Does the patient have signs of severe shock or poor perfusion, such as marked pallor, cool/sweaty skin, or a very weak pulse?"},
+    {"id": "e5", "question": "Is the patient confused, experiencing a sudden change in their normal behavior, or having a new impairment of their recent memory? "},
+    {"id": "e6", "question": "Is the patient experiencing moderate breathing difficulties (e.g., speaking in clipped sentences or increased work to breathe)? "},
+    {"id": "e7", "question": "Is the patient experiencing sudden, acute, and severe pain (rated 8 to 10 out of 10)?"},
+    {"id": "e8", "question": "Has the patient experienced a major traumatic event (e.g., a high-speed vehicle crash, ejection from a vehicle, or a fall from greater than 6 meters)?"},
 ]
 
 GENERAL_QUESTIONS = [
-    {"id": "g1", "question": "Do you have a fever above 38°C (100.4°F)?"},
-    {"id": "g2", "question": "Have your symptoms been going on for more than 3 days?"},
+    {"id": "g1", "question": "Is the patient experiencing moderate acute pain (rated 4 to 7 out of 10)?"},
+    {"id": "g2", "question": "Is the patient experiencing mild shortness of breath on exertion, but is otherwise able to speak in full sentences?"},
     {"id": "g3", "question": "Are you experiencing nausea or vomiting?"},
-    {"id": "g4", "question": "Do you have any pain that is getting progressively worse?"},
-    {"id": "g5", "question": "Are your symptoms affecting your ability to do normal daily activities?"},
 ]
 
+INTAKE_QUESTIONS = [
+    {
+        "id": "pain_score",
+        "type": "slider",
+        "question": "On a scale of 0 to 10, how severe is your pain right now?",
+        "hint": "0 = no pain · 10 = worst pain imaginable",
+        "min": 0,
+        "max": 10,
+    },
+    {
+        "id": "pain_location",
+        "type": "radio",
+        "question": "Where is your pain located?",
+        "options": [
+            {"key": "A", "label": "Head, chest, abdomen, or groin"},
+            {"key": "B", "label": "Arms, legs, hands, feet, or skin surface"},
+            {"key": "C", "label": "I am not in pain"},
+        ],
+    },
+    {
+        "id": "pain_duration",
+        "type": "radio",
+        "question": "How long have you had this pain?",
+        "options": [
+            {"key": "A", "label": "It is new pain"},
+            {"key": "B", "label": "It is ongoing or recurring pain I have had for a long time"},
+        ],
+    },
+    {
+        "id": "injuries",
+        "type": "checkbox",
+        "question": "If you are here for an injury, which best describes it? (Select all that apply)",
+        "options": [
+            {"key": "A", "label": "A deep or large cut"},
+            {"key": "B", "label": "An injury specifically to my arm, shoulder, or hand"},
+            {"key": "C", "label": "A minor burn (smaller than the palm of my hand)"},
+            {"key": "D", "label": "Minor scrapes, bruises, or a small cut"},
+            {"key": "E", "label": "A minor animal or insect bite"},
+            {"key": "F", "label": "Not applicable", "exclusive": True},
+        ],
+    },
+    {
+        "id": "symptoms",
+        "type": "checkbox",
+        "question": "If you are feeling ill, which best describes your main symptom? (Select all that apply)",
+        "options": [
+            {"key": "A", "label": "A small amount of rectal bleeding, minor vaginal spotting, or mild pain when urinating"},
+            {"key": "B", "label": "Mild constipation"},
+            {"key": "C", "label": "A cold, sore throat, or sinus issue with no breathing trouble"},
+            {"key": "D", "label": "Mild diarrhea with no signs of dehydration"},
+            {"key": "E", "label": "I am here for a routine dressing or bandage change"},
+            {"key": "F", "label": "Not applicable", "exclusive": True},
+        ],
+    },
+    {
+        "id": "mental_state",
+        "type": "radio",
+        "question": "How would you describe your current mental or emotional state?",
+        "options": [
+            {"key": "A", "label": "Mildly anxious, agitated, or stressed"},
+            {"key": "B", "label": "I have long-term (chronic) confusion, but it is no worse than my usual state"},
+            {"key": "C", "label": "I feel calm and am acting like my normal self"},
+        ],
+    },
+]
+
+#  Classification helpers 
+def classify_pain_severity(score: int) -> str:
+    if score <= 3:
+        return "mild"
+    elif score <= 7:
+        return "moderate"
+    return "severe"
+ 
+def classify_pain_location(answer: str) -> str:
+    return {"A": "central", "B": "peripheral", "C": "no_pain"}.get(answer, "unknown")
+ 
+def classify_pain_duration(answer: str) -> str:
+    return {"A": "acute", "B": "chronic"}.get(answer, "unknown")
+ 
+def classify_mental_state(answer: str) -> str:
+    return {
+        "A": "mildly anxious/agitated/stressed",
+        "B": "chronic confusion (at baseline)",
+        "C": "calm and acting normally",
+    }.get(answer, "unknown")
 
 class QuestionsResponse(BaseModel):
     layer: str
@@ -44,9 +131,20 @@ class QuestionsResponse(BaseModel):
 class TriageRequest(BaseModel):
     emergency_answers: dict[str, bool]
     general_answers: dict[str, bool]
-    health_answers: dict[str, bool]
-    pain_level: int
-    pain_location: str 
+    health_answers: dict[str, bool] = {}
+    # Intake questionnaire fields 
+    # pain_score: 0–10 slider value
+    intake_pain_score: int = 0
+    # pain_location answer key: "A" (central) | "B" (peripheral) | "C" (no pain)
+    intake_pain_location: str = "C"
+    # pain_duration answer key: "A" (acute) | "B" (chronic)
+    intake_pain_duration: str = "A"
+    # injuries: list of selected option keys e.g. ["A", "D"] or ["F"] for N/A
+    intake_injuries: list[str] = []
+    # symptoms: list of selected option keys e.g. ["C"] or ["F"] for N/A
+    intake_symptoms: list[str] = []
+    # mental_state answer key: "A" (anxious) | "B" (chronic confusion) | "C" (calm)
+    intake_mental_state: str = "C"
     # Health background
     age: int
     is_pregnant: bool
@@ -78,7 +176,10 @@ def get_emergency_questions():
 def get_general_questions():
     return QuestionsResponse(layer="general", questions=GENERAL_QUESTIONS)
 
-
+@app.get("/api/questions/intake")
+def get_intake_questions():
+    """Returns the full intake questionnaire definition for the frontend to render."""
+    return {"layer": "intake", "questions": INTAKE_QUESTIONS}
 
 
 @app.post("/api/triage", response_model=TriageResponse)
@@ -101,8 +202,6 @@ def triage(request: TriageRequest):
     emergency_summary = summarise(EMERGENCY_QUESTIONS, request.emergency_answers)
     general_summary   = summarise(GENERAL_QUESTIONS,   request.general_answers)
 
-    pain_level    = request.pain_level
-    pain_location = request.pain_location.strip() or "Not specified"
     other         = request.other_symptoms.strip() or "None provided."
 
     chronic = (
@@ -116,7 +215,22 @@ def triage(request: TriageRequest):
         if request.has_medications and request.medications_detail.strip()
         else ("Yes (no detail given)" if request.has_medications else "No")
     )
-
+    # Classify intake answers 
+    pain_severity    = classify_pain_severity(request.intake_pain_score)
+    pain_loc_type    = classify_pain_location(request.intake_pain_location)
+    pain_dur_type    = classify_pain_duration(request.intake_pain_duration)
+    mental_state     = classify_mental_state(request.intake_mental_state)
+ 
+    injury_map = {"A": "deep/large cut", "B": "arm/shoulder/hand injury",
+                  "C": "minor burn", "D": "minor scrapes/bruises/small cut",
+                  "E": "minor animal or insect bite", "F": "not applicable"}
+    symptom_map = {"A": "rectal bleeding / vaginal spotting / painful urination",
+                   "B": "mild constipation", "C": "cold/sore throat/sinus issue",
+                   "D": "mild diarrhea", "E": "routine dressing change", "F": "not applicable"}
+ 
+    injuries_str = ", ".join(injury_map.get(k, k) for k in request.intake_injuries) or "not reported"
+    symptoms_str = ", ".join(symptom_map.get(k, k) for k in request.intake_symptoms) or "not reported"
+   
     prompt = f"""You are a medical triage assistant helping patients in British Columbia, Canada decide where to seek care.
 Based on the patient's responses below, recommend one of: go to the ER, visit a walk-in clinic, or manage at home.
 Be concise (2-3 sentences). Do not diagnose. Always err on the side of caution.
@@ -126,8 +240,14 @@ EMERGENCY SCREENING (all No — patient passed):
 
 GENERAL SYMPTOMS:
 {general_summary}
-- Pain level: {pain_level} out of 10
-- Pain location: {pain_location}
+
+INTAKE QUESTIONNAIRE:
+- Self-reported pain score: {request.intake_pain_score}/10 → classified as {pain_severity}
+- Pain location type: {pain_loc_type}
+- Pain duration type: {pain_dur_type}
+- Injury description: {injuries_str}
+- Illness symptoms: {symptoms_str}
+- Mental/emotional state: {mental_state}
 
 HEALTH BACKGROUND:
 - Age: {request.age}
