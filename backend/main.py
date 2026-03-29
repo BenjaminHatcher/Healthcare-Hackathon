@@ -273,7 +273,7 @@ If your recommendation is to manage at home, include a short section titled "Hom
 End your response with exactly one of these on its own line: SEVERITY: er | SEVERITY: clinic | SEVERITY: home"""
  
     response = client.models.generate_content(
-        model="gemini-1.5-flash-8b",
+        model="gemini-2.0-flash",
         contents=prompt,
     )
     raw = response.text.strip()
