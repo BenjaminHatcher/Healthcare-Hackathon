@@ -10,7 +10,6 @@ app = FastAPI(title="HealthRoute API")
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
  
-# Allow requests from the frontend (any origin for dev; tighten in production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -156,7 +155,8 @@ class TriageRequest(BaseModel):
  
 class TriageResponse(BaseModel):
     recommendation: str
-    severity: str  # "er" | "clinic" | "home"
+    severity: str 
+    maps_query: str | None = None
  
  
 @app.get("/")
@@ -181,11 +181,11 @@ def get_intake_questions():
 @app.post("/api/triage", response_model=TriageResponse)
 def triage(request: TriageRequest):
  
-    # Fast-path: any emergency "yes" → immediate ER, skip Gemini
     if any(request.emergency_answers.values()):
         return TriageResponse(
             recommendation="Based on your responses, you may be experiencing a medical emergency. Please call 911 or go to the nearest Emergency Room immediately. Do not drive yourself.",
             severity="er",
+            maps_query="emergency room hospital",
         )
  
     def summarise(questions, answers):
@@ -270,25 +270,41 @@ If recommending a clinic, suggest what type of specialist would be most appropri
  
 If your recommendation is to manage at home, include a short section titled "Home Care Tips:" with 3-5 practical things the patient can do to help themselves recover.
  
-End your response with exactly one of these on its own line: SEVERITY: er | SEVERITY: clinic | SEVERITY: home"""
+End your response with ALL THREE of the following lines, each on its own line:
+SEVERITY: er | SEVERITY: clinic | SEVERITY: home
+MAPS_QUERY: <a short 2-5 word search term for OpenStreetMap to find the recommended facility type, e.g. "physiotherapy clinic" or "urgent care" or "walk-in clinic" or "hospital emergency">"""
  
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt,
     )
     raw = response.text.strip()
- 
+
     severity = "clinic"
     if "SEVERITY: er" in raw:
         severity = "er"
     elif "SEVERITY: home" in raw:
         severity = "home"
  
-    recommendation = (
-        raw.replace("SEVERITY: er", "")
-           .replace("SEVERITY: clinic", "")
-           .replace("SEVERITY: home", "")
-           .strip()
-    )
+    maps_query = None
+    for line in raw.splitlines():
+        if line.strip().startswith("MAPS_QUERY:"):
+            maps_query = line.strip().replace("MAPS_QUERY:", "").strip()
+            break
+
+    if not maps_query:
+        maps_query = {
+            "er": "hospital emergency",
+            "clinic": "walk-in clinic",
+            "home": None,
+        }.get(severity)
+ 
+    cleaned_lines = []
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if (stripped.startswith("SEVERITY:") or stripped.startswith("MAPS_QUERY:")):
+            continue
+        cleaned_lines.append(line)
+    recommendation = "\n".join(cleaned_lines).strip()
  
     return TriageResponse(recommendation=recommendation, severity=severity)
