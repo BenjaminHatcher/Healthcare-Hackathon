@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HealthRoute</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
   <div id="app">
@@ -100,12 +102,22 @@
         <div id="result-card">
           <div id="severity-badge"></div>
           <p id="result-text"></p>
+
+          <!-- Map section — shown only when a clinic is recommended -->
+          <div id="map-section" hidden>
+            <h3 class="map-heading">📍 Nearby Clinics</h3>
+            <div id="map"></div>
+            <ul id="clinic-list"></ul>
+          </div>
+
           <button id="restart-btn">Start Over</button>
         </div>
       </section>
     </main>
   </div>
 
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
