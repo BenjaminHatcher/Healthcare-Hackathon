@@ -30,6 +30,6 @@ uvicorn main:app --reload
 
 ## Next Steps
 
-- [ ] Step 1: Add triage decision tree in `backend/main.py`
+- [ ] Step 1: Sort out Gemini API`
 - [ ] Step 2: Add mock clinic wait-time data (JSON)
-- [ ] Step 3: Integrate map (Mapbox/Google Maps) in frontend
+- [ ] Step 3: MAYBE: Provide a triage summary for patients to provide to clinician
