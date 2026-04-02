@@ -30,6 +30,5 @@ uvicorn main:app --reload
 
 ## Next Steps
 
-- [ ] Step 1: Sort out Gemini API`
-- [ ] Step 2: Add mock clinic wait-time data (JSON)
-- [ ] Step 3: MAYBE: Provide a triage summary for patients to provide to clinician
+- [ ] Step 1: Add mock clinic wait-time data (JSON)
+- [ ] Step 2: MAYBE: Provide a triage summary for patients to provide to clinician
